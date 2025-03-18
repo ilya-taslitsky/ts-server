@@ -4,8 +4,7 @@ import {config} from './index';
 import {createKeyPairSignerFromBytes} from '@solana/kit';
 
 /**
- * Инициализирует кошелек из приватного ключа, указанного в .env.
- * В данном примере используется функция createKeyPairSignerFromBytes, как в документации Orca.
+ * Инициализирует кошелек из приватного ключа, указанного в system environment key
  */
 
 let walletSigner: any = null;
@@ -17,7 +16,8 @@ export async function initializeWallet(): Promise<any> {
             return walletSigner;
         }
         if (!config.wallet.privateKey) {
-            throw new Error('Wallet private key is not configured');
+            throw new Error('Wallet private key is not configured. \n' +
+                ' Check system environment key: WALLET_PRIVATE_KEY_SYSTEM ');
         }
         const privateKeyBytes = bs58.decode(config.wallet.privateKey);
 
