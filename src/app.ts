@@ -1,5 +1,7 @@
-import express from 'express';
-import { SwapController } from './controllers/swap-controller';
+import express, { Request, Response } from 'express';
+import {SwapController} from './controllers/swap-controller';
+import {SwapReqDto} from "./models/swap-req-dto";
+import {SwapRespDto} from "./models/swap-resp-dto";
 
 async function startServer() {
     // Create Express app
@@ -10,12 +12,14 @@ async function startServer() {
     const swapController = new SwapController();
 
     // Register routes
-    app.post('/api/swap/usdc-to-sol', (req, res) => swapController.swapUsdcForSol(req, res));
+    app.post('/api/swap',
+        (req: Request<SwapReqDto>, res: Response<SwapRespDto>) =>
+            swapController.swapUsdcForSol(req, res));
 
     // Start server
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-        console.log(`USDC-SOL Swap Service running on port ${PORT}`);
+        console.log(`Swap Service started and running on port ${PORT}`);
     });
 }
 
