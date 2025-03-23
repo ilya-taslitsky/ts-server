@@ -1,7 +1,6 @@
-import { swapInstructions } from '@orca-so/whirlpools';
-import { initializeOrcaSDK } from '../config/orca-config';
-import { POOLS, TOKENS, DEFAULT_SLIPPAGE_TOLERANCE } from '../utils/constants';
-// import {sendTransaction} from "@orca-so/tx-sender";
+import {swapInstructions} from '@orca-so/whirlpools';
+import {initializeOrcaSDK} from '../config/orca-config';
+import {config} from '../config';
 import {
     getSetComputeUnitLimitInstruction,
     getSetComputeUnitPriceInstruction
@@ -20,6 +19,7 @@ import {
     getBase64EncodedWireTransaction,
     setTransactionMessageFeePayerSigner, RpcMainnet
 } from '@solana/kit';
+import {SwapReqDto} from "../models/swap-req-dto";
 
 // Define the return type explicitly for clarity
 interface SwapResult {
@@ -31,35 +31,31 @@ interface SwapResult {
 }
 
 export class SwapService {
-    /**
-     * Swap USDC for SOL
-     * @param inputAmount Amount of USDC to swap
-     * @returns Object containing transaction details
-     */
-    async swapUsdcForSol(inputAmount: bigint): Promise<SwapResult> {
-
+    async swap(req: SwapReqDto): Promise<SwapResult> {
+        const inputAmount = BigInt(req.amount);
+        const mint = address(req.token);
+        const poolAddress = address(req.poolAddress);
+        const slippage = req.slippage || config.swap.defaultSlippageBps;
 
         try {
             // Initialize Orca SDK
-            const { wallet, rpc } = await initializeOrcaSDK();
+            const {wallet, rpc} = await initializeOrcaSDK();
 
             // Get swap instructions
-            const { instructions, quote } = await swapInstructions(
+            const {instructions, quote} = await swapInstructions(
                 rpc,
-                { inputAmount, mint: TOKENS.SOL },
-                POOLS.SOL_USDC,
-                DEFAULT_SLIPPAGE_TOLERANCE,
+                {inputAmount, mint},
+                poolAddress,
+                slippage,
                 wallet
             );
 
-            // In a real implementation, you would submit the transaction here
-            // For this example, we'll just return the quote
             console.log(`Quote estimated SOL out: ${quote.tokenEstOut}`);
             console.log(`Number of instructions: ${instructions.length}`);
             const latestBlockHash = await rpc.getLatestBlockhash().send();
 
 
-            const transactionMessage = await pipe(
+            const transactionMessage = pipe(
                 createTransactionMessage({version: 0}),
                 tx => setTransactionMessageFeePayer(wallet.address, tx),
                 tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockHash.value, tx),
@@ -72,28 +68,31 @@ export class SwapService {
                     rpc
                 });
 
-            const computeUnitEstimate = await getComputeUnitEstimateForTransactionMessage(transactionMessage) + 100_000;
+            const computeUnitEstimate =
+                await getComputeUnitEstimateForTransactionMessage(transactionMessage) + 100_000;
 
-            const medianPrioritizationFee = await rpc.getRecentPrioritizationFees()
-                .send()
-                .then(fees =>
-                    fees
-                        .map(fee => Number(fee.prioritizationFee))
-                        .sort((a, b) => a - b)
-                        [Math.floor(fees.length / 2)]
-                );
+            const medianPrioritizationFee =
+                await rpc.getRecentPrioritizationFees()
+                    .send()
+                    .then(fees =>
+                        fees
+                            .map(fee => Number(fee.prioritizationFee))
+                            .sort((a, b) => a - b)
+                            [Math.floor(fees.length / 2)]
+                    );
 
-            const transactionMessageWithComputeUnitInstructions = await prependTransactionMessageInstructions([
-                getSetComputeUnitLimitInstruction({units: computeUnitEstimate}),
-                getSetComputeUnitPriceInstruction({microLamports: medianPrioritizationFee})
-            ], transactionMessage);
+            const transactionMessageWithComputeUnitInstructions =
+                prependTransactionMessageInstructions([
+                    getSetComputeUnitLimitInstruction({units: computeUnitEstimate}),
+                    getSetComputeUnitPriceInstruction({microLamports: medianPrioritizationFee})
+                ], transactionMessage);
 
 
+            const signedTransaction =
+                await signTransactionMessageWithSigners(transactionMessageWithComputeUnitInstructions)
 
-
-            const signedTransaction = await signTransactionMessageWithSigners(transactionMessageWithComputeUnitInstructions)
-
-            const base64EncodedWireTransaction = getBase64EncodedWireTransaction(signedTransaction);
+            const base64EncodedWireTransaction =
+                getBase64EncodedWireTransaction(signedTransaction);
 
             const timeoutMs = 90000;
             const startTime = Date.now();
@@ -107,7 +106,8 @@ export class SwapService {
                     encoding: 'base64'
                 }).send();
 
-                const statuses = await rpc.getSignatureStatuses([signature]).send();
+                const statuses =
+                    await rpc.getSignatureStatuses([signature]).send();
                 if (statuses.value[0]) {
                     if (!statuses.value[0].err) {
                         console.log(`Transaction confirmed: ${signature}`);
@@ -124,8 +124,6 @@ export class SwapService {
                     await new Promise(resolve => setTimeout(resolve, remainingTime));
                 }
             }
-
-            console.log("Here")
 
             return {
                 success: true,
@@ -145,6 +143,4 @@ export class SwapService {
             };
         }
     }
-
-
 }
