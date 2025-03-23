@@ -32,8 +32,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Docker Image
-        env:
-          IMAGE_TAG="latest"
         run: |
-          docker build -t normat/ts-server:$IMAGE_TAG .
+          IMAGE_TAG="${GITHUB_REF_NAME}-${GITHUB_SHA:0:7}"
+          docker build -t normat/ts-server:$IMAGE_TAG -t normat/ts-server:latest .
           docker push normat/ts-server:$IMAGE_TAG
+          docker push normat/ts-server:latest
