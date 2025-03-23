@@ -33,7 +33,7 @@ jobs:
 
       - name: Build and Push Docker Image
         env:
-          IMAGE_TAG: ${{ github.ref_name }}-${{ github.sha }}
+          IMAGE_TAG="latest"
         run: |
           docker build -t normat/ts-server:$IMAGE_TAG .
           docker push normat/ts-server:$IMAGE_TAG
