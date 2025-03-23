@@ -28,6 +28,22 @@ export const config = {
     },
     network: {
         // Network type (for example solanaMainnet, solanaDevnet etc.)
-        type: process.env.NETWORK_TYPE ?? 'solanaMainnet',
+        type: validateNetworkType(process.env.NETWORK_TYPE)
     },
 };
+
+type NetworkType = "solanaMainnet" | "solanaDevnet" | "eclipseMainnet" | "eclipseTestnet";
+
+// Helper function to validate the network type
+function validateNetworkType(value: string | undefined): NetworkType {
+    const defaultValue = 'solanaMainnet';
+    const val = value || defaultValue;
+
+    if (val !== 'solanaMainnet' && val !== 'solanaDevnet' &&
+        val !== 'eclipseMainnet' && val !== 'eclipseTestnet') {
+        console.warn(`Invalid network type: ${val}, using default: ${defaultValue}`);
+        return defaultValue;
+    }
+
+    return val as NetworkType;
+}

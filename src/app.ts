@@ -13,11 +13,11 @@ async function startServer() {
 
     // Register routes
     app.post('/api/swap',
-        (req: Request<SwapReqDto>, res: Response<SwapRespDto>) =>
-            swapController.swapUsdcForSol(req, res));
+        (req: Request<{}, any, SwapReqDto>, res: Response<SwapRespDto>) =>
+            swapController.swap(req, res));
 
     // Start server
-    const PORT = process.env.PORT || 3000;
+    const PORT = process.env.PORT ?? 3000;
     app.listen(PORT, () => {
         console.log(`Swap Service started and running on port ${PORT}`);
     });
