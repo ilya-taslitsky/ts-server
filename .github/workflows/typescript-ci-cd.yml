@@ -13,6 +13,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,8 +35,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and Push Docker Image
-        run: |
-          IMAGE_TAG="${GITHUB_REF_NAME}-${GITHUB_SHA:0:7}"
-          docker build -t normat/ts-server:$IMAGE_TAG -t normat/ts-server:latest .
-          docker push normat/ts-server:$IMAGE_TAG
-          docker push normat/ts-server:latest
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: normat/ts-server:latest,normat/ts-server:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
