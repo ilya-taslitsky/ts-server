@@ -4,25 +4,27 @@ import {config} from './index';
 import {createKeyPairSignerFromBytes} from '@solana/kit';
 
 /**
- * Инициализирует кошелек из приватного ключа, указанного в .env.
- * В данном примере используется функция createKeyPairSignerFromBytes, как в документации Orca.
+ * Инициализирует кошелек из приватного ключа, указанного в system environment key
  */
 
 let walletSigner: any = null;
 
 export async function initializeWallet(): Promise<any> {
     logger.info('Initialize Wallet');
+
+    if (!config.wallet.privateKey) {
+        throw new Error('Wallet private key is not configured. \n' +
+            ' Check system environment key: WALLET_PRIVATE_KEY_SYSTEM ');
+    }
+    const privateKeyBytes = bs58.decode(config.wallet.privateKey);
+
+    if (privateKeyBytes.length !== 64) {
+        throw new Error(`Expected 64 bytes keypair, but got ${privateKeyBytes.length}`);
+    }
+
     try {
         if (walletSigner) {
             return walletSigner;
-        }
-        if (!config.wallet.privateKey) {
-            throw new Error('Wallet private key is not configured');
-        }
-        const privateKeyBytes = bs58.decode(config.wallet.privateKey);
-
-        if (privateKeyBytes.length !== 64) {
-            throw new Error(`Expected 64 bytes keypair, but got ${privateKeyBytes.length}`);
         }
 
         walletSigner = await createKeyPairSignerFromBytes(privateKeyBytes);
@@ -30,16 +32,6 @@ export async function initializeWallet(): Promise<any> {
         return walletSigner;
     } catch (error) {
         logger.error('Failed to initialize wallet', { error });
-        throw new Error('Failed to initialize wallet');
+        throw error;
     }
-}
-
-/**
- * Возвращает уже инициализированный кошелек.
- */
-export function getWallet(): any {
-    if (!walletSigner) {
-        throw new Error('Wallet not initialized');
-    }
-    return walletSigner;
 }

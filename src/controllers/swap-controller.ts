@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
-import { SwapService } from '../services/swap-service';
-import { SwapRequest, SwapResponse } from '../models/swap-dto';
-import { DEFAULT_USDC_AMOUNT } from '../utils/constants';
+import {Request, Response} from 'express';
+import {SwapService} from '../services/swap-service';
+import {SwapRespDto} from '../models/swap-resp-dto';
+import {SwapReqDto} from "../models/swap-req-dto";
 
 export class SwapController {
-    private swapService: SwapService;
+    private readonly swapService: SwapService;
 
     constructor() {
         this.swapService = new SwapService();
@@ -13,24 +13,30 @@ export class SwapController {
     /**
      * Handle swap request
      */
-    async swapUsdcForSol(req: Request, res: Response) {
+    async swap(req: Request<{}, any, SwapReqDto>, res: Response<SwapRespDto>): Promise<void> {
         try {
-            const swapRequest: SwapRequest = req.body;
-
-            // Use provided amount or default to 1 USDC
-            const usdcAmount = swapRequest.amount
-                ? BigInt(swapRequest.amount * 1_000_000) // Convert to lamports (USDC has 6 decimals)
-                : DEFAULT_USDC_AMOUNT;
+            const swapRequest = req.body;
+            const amount = swapRequest.amount;
 
             // Execute swap
-            const result = await this.swapService.swapUsdcForSol(usdcAmount);
-
-
+            const result = await this.swapService.swap(swapRequest);
+            // Check if the swap was successful
+            if (!result.success) {
+                // Return failure response with the error message
+                const response: SwapRespDto = ({
+                    success: false,
+                    error: result.error ?? "Swap failed",
+                    inputAmount: Number(amount) / 1_000_000,
+                    estimatedOutputAmount: 0
+                });
+                res.status(400).json(response);
+                return ;
+            }
 
             // Format and send response
-            const response: SwapResponse = {
+            const response: SwapRespDto = {
                 success: true,
-                inputAmount: Number(usdcAmount) / 1_000_000, // Convert from lamports to USDC
+                inputAmount: Number(amount) / 1_000_000, // Convert from lamports to USDC
                 estimatedOutputAmount: result.estimatedOutputAmount / 1_000_000_000, // Convert from lamports to SOL
                 transactionId: result.transactionId,
                 actualOutputAmount: result.actualOutputAmount ? result.actualOutputAmount / 1_000_000_000 : undefined
@@ -42,13 +48,12 @@ export class SwapController {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
             // Send error response
-            const response: SwapResponse = {
+            const response: SwapRespDto = {
                 success: false,
                 error: errorMessage,
                 inputAmount: 0,
                 estimatedOutputAmount: 0
             };
-
             res.status(500).json(response);
         }
     }

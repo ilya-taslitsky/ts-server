@@ -13,3 +13,18 @@
 2025-03-14T09:50:30.849Z [info]: Wallet initialized: BYcFJHa3pb5WLvr3rbu8KsFXeJgGeuxnhRRXKWfzz887 
 2025-03-14T09:53:33.576Z [info]: Initialize Wallet 
 2025-03-14T09:53:33.588Z [info]: Wallet initialized: 8NKFbNCUfQw2a6iipRsknWwqyFEN12npkbCFXmt3Dgky 
+2025-03-18T07:37:10.139Z [info]: Initialize Wallet 
+2025-03-18T07:37:10.142Z [error]: Failed to initialize wallet {"error":{}}
+2025-03-18T07:40:29.972Z [info]: Initialize Wallet 
+2025-03-18T07:40:29.972Z [error]: Failed to initialize wallet {"error":{}}
+2025-03-18T07:43:44.032Z [info]: Initialize Wallet 
+2025-03-18T07:43:44.048Z [info]: Wallet initialized: 8NKFbNCUfQw2a6iipRsknWwqyFEN12npkbCFXmt3Dgky 
+2025-03-18T08:20:42.096Z [info]: Initialize Wallet 
+2025-03-18T08:20:42.112Z [info]: Wallet initialized: 8NKFbNCUfQw2a6iipRsknWwqyFEN12npkbCFXmt3Dgky 
+2025-03-19T08:49:31.688Z [info]: Initialize Wallet 
+2025-03-19T08:49:31.714Z [info]: Wallet initialized: 8NKFbNCUfQw2a6iipRsknWwqyFEN12npkbCFXmt3Dgky 
+2025-03-19T08:55:38.027Z [info]: Initialize Wallet 
+2025-03-19T08:55:38.044Z [info]: Wallet initialized: 8NKFbNCUfQw2a6iipRsknWwqyFEN12npkbCFXmt3Dgky 
+2025-03-19T08:56:21.037Z [info]: Initialize Wallet 
+2025-03-19T08:57:22.542Z [info]: Initialize Wallet 
+2025-03-19T09:00:20.783Z [info]: Initialize Wallet 
