@@ -10,13 +10,34 @@ export class SwapController {
         this.swapService = new SwapService();
     }
 
+
+    async getPrice(req: Request<{}, any, SwapReqDto>, res: Response<number>): Promise<void> {
+        try {
+            const swapRequest = req.body;
+
+            // Get price
+            const price = await this.swapService.getPrice(swapRequest);
+            // Check if the price was successfully retrieved
+            if (price === undefined) {
+                // Return failure response
+                res.status(400).json(undefined);
+                return ;
+            }
+
+            // Send response
+            res.status(200).json(price);
+        } catch (error) {
+            console.error('Error in getPrice controller:', error);
+            res.status(500).json(undefined);
+        }
+    }
+
     /**
      * Handle swap request
      */
     async swap(req: Request<{}, any, SwapReqDto>, res: Response<SwapRespDto>): Promise<void> {
         try {
             const swapRequest = req.body;
-            const amount = swapRequest.amount;
 
             // Execute swap
             const result = await this.swapService.swap(swapRequest);
@@ -26,8 +47,6 @@ export class SwapController {
                 const response: SwapRespDto = ({
                     success: false,
                     error: result.error ?? "Swap failed",
-                    inputAmount: Number(amount) / 1_000_000,
-                    estimatedOutputAmount: 0
                 });
                 res.status(400).json(response);
                 return ;
@@ -36,10 +55,9 @@ export class SwapController {
             // Format and send response
             const response: SwapRespDto = {
                 success: true,
-                inputAmount: Number(amount) / 1_000_000, // Convert from lamports to USDC
-                estimatedOutputAmount: result.estimatedOutputAmount / 1_000_000_000, // Convert from lamports to SOL
                 transactionId: result.transactionId,
-                actualOutputAmount: result.actualOutputAmount ? result.actualOutputAmount / 1_000_000_000 : undefined
+                fee: result.fee ? result.fee / 1_000_000_000 : undefined,
+                actualOutputAmount: result.actualOutputAmount ? result.actualOutputAmount : undefined
             };
 
             res.status(200).json(response);
@@ -51,8 +69,6 @@ export class SwapController {
             const response: SwapRespDto = {
                 success: false,
                 error: errorMessage,
-                inputAmount: 0,
-                estimatedOutputAmount: 0
             };
             res.status(500).json(response);
         }

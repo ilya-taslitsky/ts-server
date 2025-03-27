@@ -16,6 +16,10 @@ async function startServer() {
         (req: Request<{}, any, SwapReqDto>, res: Response<SwapRespDto>) =>
             swapController.swap(req, res));
 
+    app.post('/api/get-price',
+        (req: Request<{}, any, SwapReqDto>, res: Response<number>) =>
+            swapController.getPrice(req, res));
+
     // Start server
     const PORT = process.env.PORT ?? 3000;
     app.listen(PORT, () => {

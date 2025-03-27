@@ -1,10 +1,17 @@
 import {setWhirlpoolsConfig, setDefaultFunder} from '@orca-so/whirlpools';
-import {createSolanaRpc, mainnet} from '@solana/kit';
+import {
+    createSolanaRpc, GetAccountInfoApi,
+    GetEpochInfoApi,
+    GetMinimumBalanceForRentExemptionApi,
+    GetMultipleAccountsApi,
+    mainnet,
+    RpcMainnet
+} from '@solana/kit';
 import {initializeWallet} from './wallet-config';
 import {config} from './index';
 
 /**
- * Initialize Orca SDK for devnet
+ * Initialize Orca SDK for mainnnet
  */
 export async function initializeOrcaSDK() {
     // Set up wallet
@@ -19,5 +26,5 @@ export async function initializeOrcaSDK() {
     // Set wallet as the default funder
     setDefaultFunder(wallet);
 
-    return {wallet, rpc: rpc};
+    return {wallet, rpc: rpc };
 }

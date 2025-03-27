@@ -1,8 +1,7 @@
 export type SwapRespDto = Readonly<{
     transactionId?: string;
-    inputAmount: number;
-    estimatedOutputAmount: number;
     actualOutputAmount?: number;
+    fee?: number;
     success: boolean;
     error?: string;
 }>
