@@ -97,12 +97,11 @@ export class SwapService {
     private getSwapParams(req: SwapReqDto) {
         const amount = BigInt(req.amount * this.solMultiplier);
         const tokenAMint =  TokenMints.getMint(req.token);
-        const tokenBMint = req.isBuy ? TokenMints.getMint(req.token) : this.usdcMint;
         const mint = address(tokenAMint);
         const poolAddress = address(TokenMints.getPool(req.token));
         const slippage = req.slippage ?? config.swap.defaultSlippageBps;
 
-        return { amount, mint, tokenBMint, poolAddress, slippage };
+        return { amount, mint, poolAddress, slippage };
     }
 
 
@@ -111,10 +110,9 @@ export class SwapService {
 
         try {
             if (req.isBuy) {
-                const outputAmount = amount;
                 const {quote} = await swapInstructions<ExactOutParams & { mint: Address }>(
                     this.rpc,
-                    { outputAmount, mint },
+                    { outputAmount: amount, mint },
                     poolAddress,
                     slippage,
                     this.wallet
@@ -122,8 +120,7 @@ export class SwapService {
                 console.log(quote)
                 return Number(quote.tokenEstIn) / this.usdcMutiplier;
             } else {
-                const inputAmount = amount;
-                const { quote } = await swapInstructions(this.rpc, { inputAmount, mint }, poolAddress, slippage, this.wallet);
+                const { quote } = await swapInstructions(this.rpc, { inputAmount: amount, mint }, poolAddress, slippage, this.wallet);
                 console.log(quote)
                 return Number(quote.tokenEstOut) / this.usdcMutiplier;
             }
@@ -137,23 +134,21 @@ export class SwapService {
 
 
     async swap(req: SwapReqDto): Promise<SwapRespDto> {
-        const { amount, mint, tokenBMint, poolAddress, slippage } = this.getSwapParams(req);
+        const { amount, mint, poolAddress, slippage } = this.getSwapParams(req);
 
         try {
             let instructions
 
             if (req.isBuy) {
-                const outputAmount = amount;
                 instructions = await swapInstructions<ExactOutParams & { mint: Address }>(
                     this.rpc,
-                    { outputAmount, mint },
+                    { outputAmount: amount, mint },
                     poolAddress,
                     slippage,
                     this.wallet
                 );
             } else {
-                const inputAmount = amount;
-                instructions = await swapInstructions(this.rpc, { inputAmount, mint }, poolAddress, slippage, this.wallet);
+                instructions = await swapInstructions(this.rpc, { inputAmount: amount, mint }, poolAddress, slippage, this.wallet);
             }
 
 
@@ -194,13 +189,15 @@ export class SwapService {
                         const transactionDetails = await this.rpc.getTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 }).send();
                         if (transactionDetails) {
                             fee = Number(transactionDetails.meta?.fee) || 0;
+                            fee = Number(fee.toFixed(6))
                             const postBalances = transactionDetails.meta?.postTokenBalances;
                             const preBalances = transactionDetails.meta?.preTokenBalances;
                             if (postBalances && preBalances) {
-                                const tokenBAccount = postBalances.find(balance => balance.mint === tokenBMint);
+                                const tokenBAccount = postBalances.find(balance => balance.mint === this.usdcMint);
                                 const tokenBPreBalance = preBalances.find(balance => balance.accountIndex === tokenBAccount?.accountIndex)?.uiTokenAmount.uiAmount || 0;
                                 const tokenBPostBalance = tokenBAccount?.uiTokenAmount.uiAmount || 0;
                                 receivedTokenB = Math.abs(tokenBPostBalance - tokenBPreBalance);
+                                receivedTokenB = Number(receivedTokenB.toFixed(6))
                             }
                         }
                         break;
@@ -219,10 +216,10 @@ export class SwapService {
                 return { success: false, error: "Transaction timed out without receiving signature" };
             }
 
-            console.log(receivedTokenB)
+
             return { success: true, transactionId: signature, fee, actualOutputAmount: receivedTokenB };
         } catch (error) {
-            console.error('Error swapping USDC for SOL:', error);
+            console.error('Error swapping:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     }
